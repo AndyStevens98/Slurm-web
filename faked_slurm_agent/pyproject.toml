@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "faked_slurm_agent"
+version = "0.1.0"
+description = "A fake Slurm agent for testing purposes"
+authors = [
+    { name = "Andy Stevens"}
+]
+dependencies = [
+    "fastapi==0.115.6",
+    "requests==2.32.3",
+    "hypercorn==0.17.3"
+]
+
+[tool.ruff]
+line-length = 250
