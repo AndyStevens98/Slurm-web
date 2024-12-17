@@ -13,6 +13,7 @@ import { useRouter, useRoute } from 'vue-router'
 import type { LocationQueryRaw } from 'vue-router'
 import { useRuntimeStore } from '@/stores/runtime'
 import { useClusterDataPoller } from '@/composables/DataPoller'
+import { parseGpuInfo } from '@/composables/GatewayAPI'
 import type { ClusterNode } from '@/composables/GatewayAPI'
 import ResourcesDiagram from '@/components/resources/ResourcesDiagram.vue'
 import NodeMainState from '@/components/resources/NodeMainState.vue'
@@ -76,6 +77,7 @@ const foldedNodes: Ref<FoldedClusterNode[]> = computed(() => {
       previousNode.sockets == currentNode.sockets &&
       previousNode.cores == currentNode.cores &&
       previousNode.real_memory == currentNode.real_memory &&
+      previousNode.gres == currentNode.gres &&
       arraysEqual<string>(previousNode.state, currentNode.state) &&
       arraysEqual<string>(previousNode.partitions, currentNode.partitions)
     ) {
@@ -222,6 +224,9 @@ onMounted(() => {
                     CPU
                   </th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    GPU
+                  </th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                     Memory
                   </th>
 
@@ -247,7 +252,7 @@ onMounted(() => {
                         />
                       </button>
                     </td>
-                    <td class="py-4 text-sm whitespace-nowrap text-gray-900">
+                    <td class="whitespace-nowrap py-4 text-sm text-gray-900">
                       <RouterLink
                         v-if="node.number == 1"
                         class="inline-flex text-white hover:font-bold hover:text-gray-500"
@@ -266,24 +271,27 @@ onMounted(() => {
                       >
                         <span class="sr-only">Toggle folded nodes {{ node.name }}</span>
                         <span class="font-mono">{{ node.name }}</span>
-                        <span class="px-1 font-normal text-gray-500 italic"
+                        <span class="px-1 font-normal italic text-gray-500"
                           >({{ node.number }})</span
                         >
                       </button>
                     </td>
-                    <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <NodeMainState :node="node" />
                     </td>
-                    <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <NodeAllocationState :node="node" />
                     </td>
-                    <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {{ node.sockets }} x {{ node.cores }}
                     </td>
-                    <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {{ parseGpuInfo(node.gres).reduce((total, gpu) => total + gpu.count, 0) }}
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {{ node.real_memory }}MB
                     </td>
-                    <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <span
                         v-for="partition in node.partitions"
                         :key="partition"
@@ -305,12 +313,12 @@ onMounted(() => {
                         <td colspan="7" class="z-0 bg-gray-300">
                           <ul
                             role="list"
-                            class="m-4 grid grid-cols-1 gap-5 sm:grid-cols-8 sm:gap-4 lg:grid-cols-16"
+                            class="lg:grid-cols-16 m-4 grid grid-cols-1 gap-5 sm:grid-cols-8 sm:gap-4"
                           >
                             <li
                               v-for="_node in expandNodeset(node.name)"
                               :key="_node"
-                              class="col-span-1 flex rounded-md border-gray-200 bg-white text-left font-mono text-xs text-gray-500 shadow-xs transition-transform hover:scale-105"
+                              class="shadow-xs col-span-1 flex rounded-md border-gray-200 bg-white text-left font-mono text-xs text-gray-500 transition-transform hover:scale-105"
                             >
                               <button
                                 class="inline-flex w-full px-4 py-2 text-white hover:text-gray-500"
