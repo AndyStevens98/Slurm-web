@@ -162,6 +162,7 @@ filters:
     - cpus
     - node_count
     - nodes
+    - gres_detail
     doc: |
       List of jobs fields selected in slurmrestd API when retrieving a list of
       jobs, all other fields arefiltered out.
@@ -210,6 +211,7 @@ filters:
     - standard_output
     - tasks
     - tres_req_str
+    - gres_detail
     doc: |
       List of slurmctld job fields selected in slurmrestd API when retrieving a
       unique job, all other fields are filtered out.
@@ -227,6 +229,9 @@ filters:
     - partitions
     - alloc_cpus
     - alloc_idle_cpus
+    - gres
+    - gres_drained
+    - gres_used
     doc: |
       List of nodes fields selected in slurmrestd API, all other fields are
       filtered out.
@@ -250,6 +255,9 @@ filters:
     - alloc_cpus
     - alloc_idle_cpus
     - alloc_memory
+    - gres
+    - gres_drained
+    - gres_used
     doc: |
       List of invidual node fields selected in slurmrestd API, all other fields
       are filtered out.
