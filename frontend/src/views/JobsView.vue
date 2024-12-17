@@ -14,6 +14,7 @@ import { useRuntimeStore } from '@/stores/runtime'
 import type { JobSortCriterion, JobSortOrder } from '@/stores/runtime/jobs'
 import { useClusterDataPoller } from '@/composables/DataPoller'
 import { compareClusterJobSortOrder } from '@/composables/GatewayAPI'
+import { parseGpuInfo } from '@/composables/GatewayAPI'
 import type { ClusterJob } from '@/composables/GatewayAPI'
 import JobsSorter from '@/components/jobs/JobsSorter.vue'
 import JobStatusBadge from '@/components/job/JobStatusBadge.vue'
@@ -26,6 +27,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/20/solid'
 import { ServerIcon, CpuChipIcon, PlusSmallIcon, WindowIcon } from '@heroicons/vue/24/outline'
+import { CpuChipIcon as SolidCpuChipIcon } from '@heroicons/vue/24/solid'
 
 const { cluster } = defineProps<{ cluster: string }>()
 
@@ -351,10 +353,16 @@ onMounted(() => {
                       <ServerIcon class="mr-0.5 h-5 w-5" aria-hidden="true" />
                       {{ job.node_count.number }}
                     </span>
-                    <span class="inline-flex">
+                    <span class="mr-2 inline-flex">
                       <CpuChipIcon class="mr-0.5 h-5 w-5" aria-hidden="true" />
                       {{ job.cpus.number }}
                     </span>
+                    <template v-if="job.gres_detail.length > 0">
+                      <span class="inline-flex">
+                        <SolidCpuChipIcon class="mr-0.5 h-5 w-5" aria-hidden="true" />
+                        {{ parseGpuInfo(job.gres_detail).reduce((total, gpu) => total + gpu.count, 0) }}
+                      </span>
+                    </template>
                   </td>
                   <td
                     class="hidden whitespace-nowrap px-3 py-4 text-sm text-gray-500 xl:table-cell"
