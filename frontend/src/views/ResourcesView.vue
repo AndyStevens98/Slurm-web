@@ -13,6 +13,7 @@ import { useRouter, useRoute } from 'vue-router'
 import type { LocationQueryRaw } from 'vue-router'
 import { useRuntimeStore } from '@/stores/runtime'
 import { useClusterDataPoller } from '@/composables/DataPoller'
+import { parseGpuInfo } from '@/composables/GatewayAPI'
 import type { ClusterNode } from '@/composables/GatewayAPI'
 import ResourcesDiagram from '@/components/resources/ResourcesDiagram.vue'
 import NodeMainState from '@/components/resources/NodeMainState.vue'
@@ -76,6 +77,7 @@ const foldedNodes: Ref<FoldedClusterNode[]> = computed(() => {
       previousNode.sockets == currentNode.sockets &&
       previousNode.cores == currentNode.cores &&
       previousNode.real_memory == currentNode.real_memory &&
+      previousNode.gres == currentNode.gres &&
       arraysEqual<string>(previousNode.state, currentNode.state) &&
       arraysEqual<string>(previousNode.partitions, currentNode.partitions)
     ) {
@@ -222,6 +224,9 @@ onMounted(() => {
                     CPU
                   </th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    GPU
+                  </th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                     Memory
                   </th>
 
@@ -279,6 +284,9 @@ onMounted(() => {
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {{ node.sockets }} x {{ node.cores }}
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {{ parseGpuInfo(node.gres).reduce((total, gpu) => total + gpu.count, 0) }}
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {{ node.real_memory }}MB
