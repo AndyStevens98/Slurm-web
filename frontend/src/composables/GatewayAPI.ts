@@ -67,6 +67,7 @@ export interface ClusterStats {
 export interface ClusterJob {
   account: string
   cpus: ClusterOptionalNumber
+  gres_detail: string[]
   job_id: number
   job_state: string[]
   node_count: ClusterOptionalNumber
@@ -169,6 +170,7 @@ export interface ClusterIndividualJob {
   derived_exit_code: ClusterJobExitCode
   exclusive: string[]
   exit_code: ClusterJobExitCode
+  gres_detail: string[]
   group: string
   last_sched_evaluation: ClusterOptionalNumber
   name: string
@@ -225,6 +227,9 @@ export interface ClusterNode {
   alloc_idle_cpus: number
   cores: number
   cpus: number
+  gres: string
+  gres_drained: string
+  gres_used: string
   name: string
   partitions: Array<string>
   real_memory: number
