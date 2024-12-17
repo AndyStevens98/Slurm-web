@@ -14,6 +14,7 @@ import { useRuntimeStore } from '@/stores/runtime'
 import type { JobSortCriterion, JobSortOrder } from '@/stores/runtime/jobs'
 import { useClusterDataPoller } from '@/composables/DataPoller'
 import { compareClusterJobSortOrder } from '@/composables/GatewayAPI'
+import { parseGpuInfo } from '@/composables/GatewayAPI'
 import type { ClusterJob } from '@/composables/GatewayAPI'
 import JobsSorter from '@/components/jobs/JobsSorter.vue'
 import JobStatusBadge from '@/components/job/JobStatusBadge.vue'
@@ -26,6 +27,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/20/solid'
 import { ServerIcon, CpuChipIcon, PlusSmallIcon, WindowIcon } from '@heroicons/vue/24/outline'
+import { CpuChipIcon as SolidCpuChipIcon } from '@heroicons/vue/24/solid'
 
 const { cluster } = defineProps<{ cluster: string }>()
 
@@ -253,7 +255,7 @@ onMounted(() => {
 
             <button
               type="button"
-              class="bg-slurmweb hover:bg-slurmweb-darker focus-visible:outline-slurmweb inline-flex items-center gap-x-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white shadow-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              class="bg-slurmweb hover:bg-slurmweb-darker focus-visible:outline-slurmweb shadow-xs inline-flex items-center gap-x-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               @click="runtimeStore.jobs.openFiltersPanel = true"
             >
               <PlusSmallIcon class="-ml-0.5 h-5 w-5" aria-hidden="true" />
@@ -326,7 +328,7 @@ onMounted(() => {
                   >
                     Reason
                   </th>
-                  <th scope="col" class="max-w-fit py-3.5 pr-4 pl-3 sm:pr-6 lg:pr-8">
+                  <th scope="col" class="max-w-fit py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8">
                     <span class="sr-only">View</span>
                   </th>
                 </tr>
@@ -334,45 +336,53 @@ onMounted(() => {
               <tbody class="divide-y divide-gray-200 bg-white">
                 <tr v-for="job in sortedJobs.slice(firstjob, lastjob)" :key="job.job_id">
                   <td
-                    class="py-4 pr-3 text-sm font-medium whitespace-nowrap text-gray-900 sm:pl-6 lg:pl-8"
+                    class="whitespace-nowrap py-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8"
                   >
                     {{ job.job_id }}
                   </td>
-                  <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-500">
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     <JobStatusBadge :status="job.job_state" />
                   </td>
-                  <td class="px-3 py-4 text-sm whitespace-nowrap text-gray-500">
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     {{ job.user_name }} ({{ job.account }})
                   </td>
                   <td
-                    class="hidden px-3 py-4 text-sm whitespace-nowrap text-gray-500 sm:table-cell"
+                    class="hidden whitespace-nowrap px-3 py-4 text-sm text-gray-500 sm:table-cell"
                   >
                     <span class="mr-2 inline-flex">
                       <ServerIcon class="mr-0.5 h-5 w-5" aria-hidden="true" />
                       {{ job.node_count.number }}
                     </span>
-                    <span class="inline-flex">
+                    <span class="mr-2 inline-flex">
                       <CpuChipIcon class="mr-0.5 h-5 w-5" aria-hidden="true" />
                       {{ job.cpus.number }}
                     </span>
+                    <template v-if="job.gres_detail.length > 0">
+                      <span class="inline-flex">
+                        <SolidCpuChipIcon class="mr-0.5 h-5 w-5" aria-hidden="true" />
+                        {{
+                          parseGpuInfo(job.gres_detail).reduce((total, gpu) => total + gpu.count, 0)
+                        }}
+                      </span>
+                    </template>
                   </td>
                   <td
-                    class="hidden px-3 py-4 text-sm whitespace-nowrap text-gray-500 xl:table-cell"
+                    class="hidden whitespace-nowrap px-3 py-4 text-sm text-gray-500 xl:table-cell"
                   >
                     {{ job.partition }}
                   </td>
                   <td
-                    class="hidden px-3 py-4 text-sm whitespace-nowrap text-gray-500 xl:table-cell"
+                    class="hidden whitespace-nowrap px-3 py-4 text-sm text-gray-500 xl:table-cell"
                   >
                     {{ job.qos }}
                   </td>
                   <td
-                    class="hidden px-3 py-4 text-center text-sm whitespace-nowrap text-gray-500 sm:table-cell"
+                    class="hidden whitespace-nowrap px-3 py-4 text-center text-sm text-gray-500 sm:table-cell"
                   >
                     {{ jobPriority(job) }}
                   </td>
                   <td
-                    class="hidden px-3 py-4 text-sm whitespace-nowrap text-gray-500 2xl:table-cell"
+                    class="hidden whitespace-nowrap px-3 py-4 text-sm text-gray-500 2xl:table-cell"
                   >
                     <template v-if="job.state_reason != 'None'">
                       {{ job.state_reason }}
@@ -425,7 +435,7 @@ onMounted(() => {
                 <div>
                   <nav
                     v-if="lastpage > 1"
-                    class="isolate inline-flex -space-x-px rounded-md shadow-xs"
+                    class="shadow-xs isolate inline-flex -space-x-px rounded-md"
                     aria-label="Pagination"
                   >
                     <button
@@ -433,7 +443,7 @@ onMounted(() => {
                         runtimeStore.jobs.page == 1
                           ? 'cursor-default bg-gray-100 text-gray-100'
                           : 'text-gray-400 hover:bg-gray-50',
-                        'relative inline-flex items-center rounded-l-md px-2 py-2 ring-1 ring-gray-300 ring-inset focus:z-20 focus:outline-offset-0'
+                        'relative inline-flex items-center rounded-l-md px-2 py-2 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0'
                       ]"
                       @click="runtimeStore.jobs.page > 1 && (runtimeStore.jobs.page -= 1)"
                     >
@@ -444,7 +454,7 @@ onMounted(() => {
                       <button
                         v-if="page.ellipsis"
                         aria-current="page"
-                        class="relative z-10 inline-flex items-center bg-white px-4 py-2 text-xs font-semibold text-gray-600 ring-1 ring-gray-300 ring-inset focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        class="relative z-10 inline-flex items-center bg-white px-4 py-2 text-xs font-semibold text-gray-600 ring-1 ring-inset ring-gray-300 focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                       >
                         …
                       </button>
@@ -454,7 +464,7 @@ onMounted(() => {
                         :class="[
                           page.id == runtimeStore.jobs.page
                             ? 'bg-slurmweb text-white'
-                            : 'bg-white text-black ring-1 ring-gray-300 ring-inset hover:bg-gray-50',
+                            : 'bg-white text-black ring-1 ring-inset ring-gray-300 hover:bg-gray-50',
                           'relative z-10 inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
                         ]"
                         @click="runtimeStore.jobs.page = page.id"
@@ -467,7 +477,7 @@ onMounted(() => {
                         runtimeStore.jobs.page == lastpage
                           ? 'cursor-default bg-gray-100 text-gray-100'
                           : 'text-gray-400 hover:bg-gray-50',
-                        'relative inline-flex items-center rounded-r-md px-2 py-2 ring-1 ring-gray-300 ring-inset focus:z-20 focus:outline-offset-0'
+                        'relative inline-flex items-center rounded-r-md px-2 py-2 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0'
                       ]"
                       @click="runtimeStore.jobs.page < lastpage && (runtimeStore.jobs.page += 1)"
                     >
