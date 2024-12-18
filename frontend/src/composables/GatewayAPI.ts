@@ -211,6 +211,31 @@ export function getNodeMainState(node: ClusterNode): ClusterNodeMainState {
   }
 }
 
+export interface NodeGpuInfo {
+  type: string
+  count: number
+}
+
+export function parseGpuInfo(input: string | string[]): NodeGpuInfo[] {
+  const gpuEntries = Array.isArray(input) ? input : input.split(',')
+  const gpuInfoList: NodeGpuInfo[] = []
+
+  for (const entry of gpuEntries) {
+    // Match patterns with optional type, count, and parentheses for index
+    const match = entry.match(/^gpu(?::([^:]+))?(?::(\d+))(?:\(IDX:[^\)]+\))?$/)
+
+    if (match) {
+      const [, type = '', count] = match
+      gpuInfoList.push({
+        type,
+        count: parseInt(count, 10)
+      })
+    }
+  }
+
+  return gpuInfoList
+}
+
 export function getNodeAllocationState(node: ClusterNode): ClusterNodeAllocatedState {
   if (node.state.includes('ALLOCATED')) {
     return 'allocated'
