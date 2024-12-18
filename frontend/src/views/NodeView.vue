@@ -13,6 +13,7 @@ import { useRuntimeStore } from '@/stores/runtime'
 import ClusterMainLayout from '@/components/ClusterMainLayout.vue'
 import { useClusterDataPoller } from '@/composables/DataPoller'
 import type { ClusterDataPoller } from '@/composables/DataPoller'
+import { parseGpuInfo } from '@/composables/GatewayAPI'
 import type { ClusterIndividualNode, ClusterJob } from '@/composables/GatewayAPI'
 import NodeMainState from '@/components/resources/NodeMainState.vue'
 import NodeAllocationState from '@/components/resources/NodeAllocationState.vue'
@@ -104,6 +105,23 @@ if (runtimeStore.hasPermission('view-jobs')) {
                         }}%)</span
                       >
                     </li>
+                    <li>
+                      GPU:
+                      {{
+                        parseGpuInfo(node.data.value.gres_used).reduce((total, gpu) => total + gpu.count, 0)
+                      }}
+                      /
+                      {{
+                        parseGpuInfo(node.data.value.gres).reduce((total, gpu) => total + gpu.count, 0)
+                      }}
+                      <span class="italic text-gray-400"
+                        >({{
+                          (parseGpuInfo(node.data.value.gres_used).reduce((total, gpu) => total + gpu.count, 0) /
+                            parseGpuInfo(node.data.value.gres).reduce((total, gpu) => total + gpu.count, 0)) *
+                            100
+                        }}%)</span
+                      >
+                    </li>
                   </ul>
                 </dd>
               </div>
@@ -160,6 +178,12 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 <dt class="text-sm font-medium leading-6 text-gray-900">Memory</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   {{ node.data.value.real_memory }}MB
+                </dd>
+              </div>
+              <div id="gpu" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                <dt class="text-sm font-medium leading-6 text-gray-900">GPU</dt>
+                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                  {{ node.data.value.gres }}
                 </dd>
               </div>
               <div id="partitions" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
