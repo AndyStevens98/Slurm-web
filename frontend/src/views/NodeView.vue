@@ -42,6 +42,18 @@ let jobs: ClusterDataPoller<ClusterJob[]> | undefined
 if (runtimeStore.hasPermission('view-jobs')) {
   jobs = useClusterDataPoller<ClusterJob[]>('jobs', 10000, nodeName)
 }
+
+/* Function to help pretty format percentages */
+function formatPercentage(value: number): string {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(2)
+}
+
+/*
+ * Return a formatted memory value based on if the value is greater than 1024 to display in GB
+ */
+function formatMemory(memory: number): string {
+  return memory > 1024 ? `${(memory / 1024).toFixed(2)} GB` : `${memory} MB`
+}
 </script>
 
 <template>
@@ -53,7 +65,7 @@ if (runtimeStore.hasPermission('view-jobs')) {
     <button
       @click="backToResources()"
       type="button"
-      class="bg-slurmweb hover:bg-slurmweb-dark focus-visible:outline-slurmweb-dark mt-8 mb-16 inline-flex items-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+      class="bg-slurmweb hover:bg-slurmweb-dark focus-visible:outline-slurmweb-dark shadow-xs mb-16 mt-8 inline-flex items-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       <ChevronLeftIcon class="-ml-0.5 h-5 w-5" aria-hidden="true" />
       Back to resources
@@ -69,7 +81,7 @@ if (runtimeStore.hasPermission('view-jobs')) {
     <div v-else-if="node.data.value">
       <div class="flex justify-between">
         <div class="px-4 pb-8 sm:px-0">
-          <h3 class="text-base leading-7 font-semibold text-gray-900">Node {{ nodeName }}</h3>
+          <h3 class="text-base font-semibold leading-7 text-gray-900">Node {{ nodeName }}</h3>
           <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">All node statuses</p>
         </div>
       </div>
@@ -78,7 +90,7 @@ if (runtimeStore.hasPermission('view-jobs')) {
           <div class="border-t border-gray-100">
             <dl class="divide-y divide-gray-100">
               <div id="status" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Node status</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Node status</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   <NodeMainState :node="node.data.value" />
                   <span v-if="node.data.value.reason" class="pl-4 text-gray-500"
@@ -87,38 +99,59 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 </dd>
               </div>
               <div id="allocation" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Allocation status</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Allocation status</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   <NodeAllocationState :node="node.data.value" />
-                  <ul class="list-disc pt-4 pl-4">
+                  <ul class="list-disc pl-4 pt-4">
                     <li>
                       CPU: {{ node.data.value.alloc_cpus }} / {{ node.data.value.cpus }}
-                      <span class="text-gray-400 italic"
-                        >({{ (node.data.value.alloc_cpus / node.data.value.cpus) * 100 }}%)</span
+                      <span class="italic text-gray-400"
+                        >({{
+                          formatPercentage(
+                            (node.data.value.alloc_cpus / node.data.value.cpus) * 100
+                          )
+                        }}%)</span
                       >
                     </li>
                     <li>
-                      Memory: {{ node.data.value.alloc_memory }} / {{ node.data.value.real_memory }}
-                      <span class="text-gray-400 italic"
+                      Memory: {{ (node.data.value.alloc_memory / 1024).toFixed(2) }} /
+                      {{ (node.data.value.real_memory / 1024).toFixed(2) }}
+                      <span class="italic text-gray-400"
                         >({{
-                          (node.data.value.alloc_memory / node.data.value.real_memory) * 100
+                          formatPercentage(
+                            (node.data.value.alloc_memory / node.data.value.real_memory) * 100
+                          )
                         }}%)</span
                       >
                     </li>
                     <li>
                       GPU:
                       {{
-                        parseGpuInfo(node.data.value.gres_used).reduce((total, gpu) => total + gpu.count, 0)
+                        parseGpuInfo(node.data.value.gres_used).reduce(
+                          (total, gpu) => total + gpu.count,
+                          0
+                        )
                       }}
                       /
                       {{
-                        parseGpuInfo(node.data.value.gres).reduce((total, gpu) => total + gpu.count, 0)
+                        parseGpuInfo(node.data.value.gres).reduce(
+                          (total, gpu) => total + gpu.count,
+                          0
+                        )
                       }}
                       <span class="italic text-gray-400"
                         >({{
-                          (parseGpuInfo(node.data.value.gres_used).reduce((total, gpu) => total + gpu.count, 0) /
-                            parseGpuInfo(node.data.value.gres).reduce((total, gpu) => total + gpu.count, 0)) *
-                            100
+                          formatPercentage(
+                            (parseGpuInfo(node.data.value.gres_used).reduce(
+                              (total, gpu) => total + gpu.count,
+                              0
+                            ) /
+                              parseGpuInfo(node.data.value.gres).reduce(
+                                (total, gpu) => total + gpu.count,
+                                0
+                              )) *
+                              100
+                          )
                         }}%)</span
                       >
                     </li>
@@ -126,7 +159,7 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 </dd>
               </div>
               <div v-if="jobs" id="jobs" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">
+                <dt class="text-sm font-medium leading-6 text-gray-900">
                   Current Jobs
                   <span
                     v-if="jobs.data.value"
@@ -154,7 +187,7 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 </dd>
               </div>
               <div id="cpu" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">
+                <dt class="text-sm font-medium leading-6 text-gray-900">
                   CPU (socket x cores/socket)
                 </dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
@@ -163,21 +196,28 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 </dd>
               </div>
               <div id="threads" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Threads/core</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Threads/core</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   {{ node.data.value.threads }}
                 </dd>
               </div>
               <div id="arch" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Architecture</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Architecture</dt>
                 <dd class="mt-1 font-mono text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   {{ node.data.value.architecture }}
                 </dd>
               </div>
               <div id="memory" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Memory</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Memory</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-                  {{ node.data.value.real_memory }}MB
+                  <span class="group relative">
+                    {{ formatMemory(node.data.value.real_memory) }}
+                    <span
+                      class="absolute bottom-full left-0 mb-1 hidden w-max rounded bg-gray-700 px-2 py-1 text-xs text-white group-hover:block"
+                    >
+                      {{ node.data.value.real_memory }} MB
+                    </span>
+                  </span>
                 </dd>
               </div>
               <div id="gpu" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
@@ -187,7 +227,7 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 </dd>
               </div>
               <div id="partitions" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Partitions</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Partitions</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   <span
                     v-for="partition in node.data.value.partitions"
@@ -198,13 +238,13 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 </dd>
               </div>
               <div id="kernel" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">OS Kernel</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">OS Kernel</dt>
                 <dd class="mt-1 font-mono text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   {{ node.data.value.operating_system }}
                 </dd>
               </div>
               <div id="reboot" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Reboot</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Reboot</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   <template v-if="node.data.value.boot_time.set">
                     {{ new Date(node.data.value.boot_time.number * 10 ** 3).toLocaleString() }}
@@ -213,7 +253,7 @@ if (runtimeStore.hasPermission('view-jobs')) {
                 </dd>
               </div>
               <div id="last" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                <dt class="text-sm leading-6 font-medium text-gray-900">Last busy</dt>
+                <dt class="text-sm font-medium leading-6 text-gray-900">Last busy</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                   <template v-if="node.data.value.last_busy.set">
                     {{ new Date(node.data.value.last_busy.number * 10 ** 3).toLocaleString() }}
