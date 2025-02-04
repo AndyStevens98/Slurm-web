@@ -64,6 +64,7 @@ const JobsFields = [
   'nodes',
   'partition',
   'qos',
+  'gres-detail',
   'tres-requested',
   'tres-allocated'
 ] as const
@@ -90,6 +91,7 @@ const displayTags = ref<Record<JobField, { show: boolean; highlight: boolean }>>
   nodes: { show: false, highlight: false },
   partition: { show: false, highlight: false },
   qos: { show: false, highlight: false },
+  'gres-detail': {show: false, highlight: false},
   'tres-allocated': { show: false, highlight: false },
   'tres-requested': { show: false, highlight: false }
 })
@@ -157,6 +159,12 @@ const jobFieldsContent = computed(
         props: { field: data.value.partition }
       },
       { id: 'qos', label: 'QOS', component: JobFieldRaw, props: { field: data.value.qos } },
+      {
+        id: 'gres-detail',
+        label: 'GPUs',
+        component: JobFieldRaw,
+        props: { field: data.value.gres_detail.join(", ") }
+      },
       {
         id: 'tres-requested',
         label: 'Requested',
