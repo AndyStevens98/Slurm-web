@@ -165,6 +165,16 @@ onMounted(() => {
     updateQueryParameters()
   }
 })
+
+/*
+ * Return a formatted memory value based on if the value is greater than 1024 to display in GB
+*/
+function formatMemory(memory: number): string {
+  return memory > 1024
+    ? `${(memory / 1024).toFixed(2)} GB`
+    : `${memory} MB`
+}
+
 </script>
 
 <template>
@@ -287,7 +297,12 @@ onMounted(() => {
                       {{ parseGpuInfo(node.gres).reduce((total, gpu) => total + gpu.count, 0) }}
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {{ node.real_memory }}MB
+                      <span class="relative group">
+                        {{ formatMemory(node.real_memory) }}
+                        <span class="absolute left-0 bottom-full mb-1 hidden w-max rounded bg-gray-700 px-2 py-1 text-xs text-white group-hover:block">
+                          {{ node.real_memory }} MB
+                        </span>
+                      </span>
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       <span

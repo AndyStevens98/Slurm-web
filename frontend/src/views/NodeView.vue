@@ -51,6 +51,20 @@ let jobs: ClusterDataPoller<ClusterJob[]> | undefined
 if (runtimeStore.hasPermission('view-jobs')) {
   jobs = useClusterDataPoller<ClusterJob[]>('jobs', 10000, props.nodeName)
 }
+
+/* Function to help pretty format percentages */
+function formatPercentage(value: number): string {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+}
+
+/*
+ * Return a formatted memory value based on if the value is greater than 1024 to display in GB
+*/
+function formatMemory(memory: number): string {
+  return memory > 1024
+    ? `${(memory / 1024).toFixed(2)} GB`
+    : `${memory} MB`
+}
 </script>
 
 <template>
@@ -102,14 +116,14 @@ if (runtimeStore.hasPermission('view-jobs')) {
                     <li>
                       CPU: {{ node.data.value.alloc_cpus }} / {{ node.data.value.cpus }}
                       <span class="italic text-gray-400"
-                        >({{ (node.data.value.alloc_cpus / node.data.value.cpus) * 100 }}%)</span
+                        >({{ formatPercentage((node.data.value.alloc_cpus / node.data.value.cpus) * 100) }}%)</span
                       >
                     </li>
                     <li>
-                      Memory: {{ node.data.value.alloc_memory }} / {{ node.data.value.real_memory }}
+                      Memory: {{ (node.data.value.alloc_memory / 1024).toFixed(2)}} / {{ (node.data.value.real_memory / 1024).toFixed(2) }}
                       <span class="italic text-gray-400"
                         >({{
-                          (node.data.value.alloc_memory / node.data.value.real_memory) * 100
+                          formatPercentage((node.data.value.alloc_memory / node.data.value.real_memory) * 100)
                         }}%)</span
                       >
                     </li>
@@ -124,9 +138,9 @@ if (runtimeStore.hasPermission('view-jobs')) {
                       }}
                       <span class="italic text-gray-400"
                         >({{
-                          (parseGpuInfo(node.data.value.gres_used).reduce((total, gpu) => total + gpu.count, 0) /
+                          formatPercentage((parseGpuInfo(node.data.value.gres_used).reduce((total, gpu) => total + gpu.count, 0) /
                             parseGpuInfo(node.data.value.gres).reduce((total, gpu) => total + gpu.count, 0)) *
-                            100
+                            100)
                         }}%)</span
                       >
                     </li>
@@ -185,7 +199,12 @@ if (runtimeStore.hasPermission('view-jobs')) {
               <div id="memory" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                 <dt class="text-sm font-medium leading-6 text-gray-900">Memory</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-                  {{ node.data.value.real_memory }}MB
+                    <span class="relative group">
+                      {{ formatMemory(node.data.value.real_memory) }}
+                      <span class="absolute left-0 bottom-full mb-1 hidden w-max rounded bg-gray-700 px-2 py-1 text-xs text-white group-hover:block">
+                        {{ node.data.value.real_memory }} MB
+                      </span>
+                    </span>
                 </dd>
               </div>
               <div id="gpu" class="px-4 py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
