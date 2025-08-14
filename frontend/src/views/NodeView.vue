@@ -56,6 +56,20 @@ function formatMemory(memory: number): string {
     ? `${(memory / 1024).toFixed(2)} GB`
     : `${memory} MB`
 }
+
+/* Function to help pretty format percentages */
+function formatPercentage(value: number): string {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+}
+
+/*
+ * Return a formatted memory value based on if the value is greater than 1024 to display in GB
+*/
+function formatMemory(memory: number): string {
+  return memory > 1024
+    ? `${(memory / 1024).toFixed(2)} GB`
+    : `${memory} MB`
+}
 </script>
 
 <template>
